@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+}
+
+body {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: linear-gradient(135deg, #ff9a9e 10%, #F6416C 100%);
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
+  padding: 40px;
+  border-radius: 25px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  margin: 20px;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #000;
+}
+
+.input-container {
+  margin-bottom: 20px;
+}
+
+.input-container input {
+  width: calc(100% - 20px);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.button {
+  background-image: linear-gradient(135deg, #ff9a9e 10%, #F6416C 100%);
+  border: none;
+  color: #f2f2f2;
+  font-size: 18px;
+  font-weight: 400;
+  border-radius: 20px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.button-google-button {
+  background-image: linear-gradient(135deg, #ff9a9e 10%, #F6416C 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 400;
+  border-radius: 20px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.button-google-button:hover,
+.button:hover {
+  transform: scale(0.97);
+}
+
+.google-button {
+  background-image: linear-gradient(135deg, #ff9a9e 10%, #F6416C 100%);
+  color: #f2f2f2;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.google-button:hover {
+  transform: scale(0.97);
+}
+
+.message {
+  margin-top: 20px;
+  font-size: 16px;
+}
+
+.message.success {
+  color: #28a745;
+}
+
+.message.error {
+  color: #dc3545;
+}
+
+a {
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: none;
+  color: #000;
+  font-size: 16px;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .input-container input {
+    width: calc(100% - 10px);
+  }
+
+  .button,
+  .button-google-button {
+    font-size: 16px;
+    padding: 8px 15px;
+  }
+
+  .message {
+    font-size: 14px;
+  }
+
+  a {
+    font-size: 14px;
+  }
+}
