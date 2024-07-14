@@ -8,14 +8,12 @@ import {
   removeProxyFromFirestore,
 } from "./firestoreService";
 import { handleLogout } from "./authService";
-import { auth as firebaseAuth, db } from "../config/firebase";
-import { doc, onSnapshot, collection, addDoc, getDoc, query, where, getDocs } from "firebase/firestore";
+import { auth as firebaseAuth, db } from "../../config/firebase";
+import { doc, onSnapshot, collection, addDoc, getDoc, query, where, getDocs } from "firebase/firestore"; // Added `query`, `where`, and `getDocs`
 import './Dashboard.css';
-import CountdownTimer from './CountdownTimer';
+import CountdownTimer from './CountdownTimer'; // Assuming CountdownTimer is in the same directory as Dashboard
 import { ClipLoader } from "react-spinners";
 
-const REACT_APP_GENERATE_PROXY_URL = process.env.REACT_APP_GENERATE_PROXY_URL;
-const REACT_APP_REGENERATE_PROXY_URL = process.env.REACT_APP_REGENERATE_PROXY_URL;
 
 export const Dashboard = () => {
   const [password, setPassword] = useState("");
@@ -31,9 +29,9 @@ export const Dashboard = () => {
   const [price, setPrice] = useState(0);
   const [proxyPage, setProxyPage] = useState(0);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [displayUsername, setDisplayUsername] = useState("");
-  const [usernameInput, setUsernameInput] = useState("");
-  const [loadingMessage, setLoadingMessage] = useState("");
+  const [displayUsername, setDisplayUsername] = useState(""); // New state for display username
+  const [usernameInput, setUsernameInput] = useState(""); // New state for input field
+
 
   const proxiesPerPage = 3;
 
@@ -42,7 +40,7 @@ export const Dashboard = () => {
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
         const userData = doc.data();
-        setDisplayUsername(userData.username);
+        setDisplayUsername(userData.username); // Set display username here
         setBalance(userData.balance);
       }
     });
@@ -52,8 +50,8 @@ export const Dashboard = () => {
   const fetchProxyList = useCallback(async () => {
     try {
       const proxies = await getProxyList(userId);
-      proxies.sort((a, b) => new Date(b.generatedDate) - new Date(a.generatedDate));
-      proxies.sort((a, b) => (a.status === 'expired' ? -1 : 1));
+      proxies.sort((a, b) => new Date(b.generatedDate) - new Date(a.generatedDate)); // Sort proxies by generatedDate descending
+      proxies.sort((a, b) => (a.status === 'expired' ? -1 : 1)); // Move expired proxies to the top
       setProxyList(proxies);
     } catch (error) {
       console.error("Failed to fetch proxy list:", error);
@@ -76,6 +74,7 @@ export const Dashboard = () => {
       }
       setIsLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -113,28 +112,28 @@ export const Dashboard = () => {
   const handleGenerateProxy = async () => {
     const speedMbps = parseInt(speed, 10);
     const expiryDays = parseInt(expiry, 10);
-
+  
     if (!usernameInput || !password || isNaN(speedMbps) || speedMbps < 30 || speedMbps > 100) {
       setMessage("All fields are required and speed must be between 30 Mbps and 100 Mbps.");
       setMessageType("error");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
-
+  
     if (usernameInput.includes(" ")) {
       setMessage("Username cannot contain spaces.");
       setMessageType("error");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
-
+  
     if (balance < price) {
       setMessage("Insufficient balance.");
       setMessageType("error");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
-
+  
     const usernameExists = await checkUsernameExists(usernameInput);
     if (usernameExists) {
       setMessage("Username already exists. Please try something else.");
@@ -142,19 +141,19 @@ export const Dashboard = () => {
       setTimeout(() => setMessage(""), 3000);
       return;
     }
-
+  
     const currentDate = new Date();
     const expiryDate = new Date(currentDate);
     expiryDate.setDate(currentDate.getDate() + expiryDays + 1);
-
+  
     setIsLoading(true);
     try {
-      const response = await axios.post(REACT_APP_GENERATE_PROXY_URL, {
+      const response = await axios.post("https://api.speedbuy.xyz/generate_proxy", {
         username: usernameInput,
         password,
         speed: `${speedMbps}`
       });
-
+  
       if (response.data.success) {
         const proxyData = {
           ...response.data.proxy,
@@ -169,7 +168,7 @@ export const Dashboard = () => {
         setMessage("Proxy generated successfully!");
         setMessageType("success");
         fetchProxyList();
-        setUsernameInput("");
+        setUsernameInput(""); // Reset the input field
       } else {
         throw new Error(response.data.error);
       }
@@ -188,70 +187,64 @@ export const Dashboard = () => {
 
     setIsLoading(true);
     setIsRegenerating(true);
-    setLoadingMessage("Please wait...");
 
     try {
-        const proxyDocRef = doc(db, "users", userId, "proxies", proxyId);
-        const proxyDoc = await getDoc(proxyDocRef);
+      const proxyDocRef = doc(db, "users", userId, "proxies", proxyId);
+      const proxyDoc = await getDoc(proxyDocRef);
 
-        if (!proxyDoc.exists()) {
-            setMessage("Proxy not found.");
-            setMessageType("error");
-            setIsLoading(false);
-            setIsRegenerating(false);
-            setTimeout(() => setMessage(""), 3000);
-            return;
-        }
-
-        const proxy = proxyDoc.data();
-
-        if (proxy.status === 'expired') {
-            setMessage("Expired Proxy. Generate a New Proxy");
-            setMessageType("error");
-            setIsLoading(false);
-            setIsRegenerating(false);
-            setTimeout(() => setMessage(""), 3000);
-            return;
-        }
-
-        const { username, password, speed, generatedDate } = proxy;
-
-        setLoadingMessage("Don't close the Browser this might take a while Searching for good servers...");
-
-        const response = await axios.post(REACT_APP_REGENERATE_PROXY_URL, {
-            username,
-            old_ip: oldIp,
-            password,
-            speed
-        });
-
-        setLoadingMessage("Generating proxy...");
-
-        if (response.data.success) {
-            const countdownDuration = 600000; // Example: 10 minutes
-            const countdownEnd = new Date(Date.now() + countdownDuration);
-
-            const newProxyData = {
-                ip: response.data.proxy.ip,
-                countdownEnd: countdownEnd.toISOString()
-            };
-
-            await updateProxyInFirestore(userId, proxyId, newProxyData, generatedDate);
-            setMessage("Proxy regenerated successfully!");
-            setMessageType("success");
-            fetchProxyList();
-        } else {
-            throw new Error(response.data.error);
-        }
-    } catch (error) {
-        console.error("Error regenerating proxy:", error);
-        setMessage("Failed to regenerate proxy. Please try again later.");
+      if (!proxyDoc.exists()) {
+        setMessage("Proxy not found.");
         setMessageType("error");
-    } finally {
-        setLoadingMessage("");
         setIsLoading(false);
         setIsRegenerating(false);
         setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      const proxy = proxyDoc.data();
+
+      if (proxy.status === 'expired') {
+        setMessage("Expired Proxy. Generate a New Proxy");
+        setMessageType("error");
+        setIsLoading(false);
+        setIsRegenerating(false);
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      const { username, password, speed } = proxy;
+
+      const response = await axios.post("https://api.speedbuy.xyz/regenerate_proxy", {
+        username,
+        old_ip: oldIp,
+        password,
+        speed
+      });
+
+      if (response.data.success) {
+        const countdownDuration = 600000; // Example: 20 seconds
+        const countdownEnd = new Date(Date.now() + countdownDuration);
+
+        const newProxyData = {
+          ...response.data.proxy,
+          generatedDate: new Date().toISOString(),
+          countdownEnd: countdownEnd.toISOString()
+        };
+        await updateProxyInFirestore(userId, proxyId, newProxyData);
+        setMessage("Proxy regenerated successfully!");
+        setMessageType("success");
+        fetchProxyList();
+      } else {
+        throw new Error(response.data.error);
+      }
+    } catch (error) {
+      console.error("Error regenerating proxy:", error);
+      setMessage("Failed to regenerate proxy. Please try again later.");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+      setIsRegenerating(false);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
@@ -281,6 +274,7 @@ export const Dashboard = () => {
   };
 
   const handleCountdownEnd = () => {
+    // Handle the action when countdown ends (e.g., refresh proxy details)
     fetchProxyList();
   };
 
@@ -299,11 +293,11 @@ export const Dashboard = () => {
   if (isLoading) {
     return (
       <div className="loading-screen">
-        <ClipLoader size={150} color={"#36d7b7"} loading={isLoading} />
-        <p>{loadingMessage || "please wait..."}</p>
+        <ClipLoader size={150} color={"#123abc"} loading={isLoading} />
       </div>
     );
   }
+  
 
   if (isLoggedOut) {
     return <Navigate to="/" />;
@@ -317,7 +311,7 @@ export const Dashboard = () => {
         <Link to="/" onClick={() => handleLogout(setIsLoggedOut)} className="logout">Logout</Link>
         <Link to="/addmoney" className="add-money">Add Money</Link>
       </div>
-      <h1>Welcome, {displayUsername}</h1>
+      <h1>Welcome, {displayUsername}</h1> {/* Use displayUsername here */}
       <p className="balance">Balance: {balance} Taka</p>
       {message && <p className={`message ${messageType}`}>{message}</p>}
       <div className="input-container">
